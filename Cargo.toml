@@ -1,0 +1,16 @@
+[package]
+name = "lmake"
+version = "0.1.0"
+authors = ["snsvrno <snsvrno@tuta.io>"]
+
+[dependencies]
+clap = "2.29.1"
+toml = "0.4.5"
+ansi_term = "0.10.2"
+serde = "1.0.27"
+serde_derive = "1.0.27"
+rand = "0.4"
+
+output = { git = "https://github.com/Snsvrno/output-lp-rs", tag = "0.1.0" }
+lpsettings = { git = "https://github.com/Snsvrno/lpsettings-rs", tag = "0.1.4" }
+version = { git = "https://github.com/Snsvrno/version-lp-rs", tag = "0.1.3" }
