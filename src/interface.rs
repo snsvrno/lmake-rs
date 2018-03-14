@@ -31,6 +31,7 @@ fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
 
 
   if matches.is_present("name-with-version") { env::set_var("LMAKE_COMPILE_WITH_VERSION_IN_NAME","true"); }
+  if matches.is_present("remove-comments") { env::set_var("LMAKE_REMOVE_COMMENTS","true"); }
 
   let library_path : PathBuf = if let Some(lib) = matches.value_of("PATH") { PathBuf::from(lib) } else { PathBuf::from(".") };
   output_debug!("using {} as the library path",Blue.paint(library_path.display().to_string()));
@@ -110,6 +111,14 @@ pub fn app() -> clap::App<'static,'static> {
       .arg(clap::Arg::with_name("name-with-version")
         .help("Include the version in the compiled name")
         .long("name-with-version"))
+
+      .arg(clap::Arg::with_name("remove-comments")
+        .help("Removes all comments from files")
+        .long("remove-comments"))
+
+
+
+      // parameters
       .arg(clap::Arg::with_name("compiled-name")
         .help("Set what to name the compiled file")
         .long("compiled-name")
