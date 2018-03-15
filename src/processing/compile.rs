@@ -1,5 +1,7 @@
-use std::path::{PathBuf,Path};
+use std::path::PathBuf;
 use ansi_term::Colour::{Red,Yellow};
+
+use LIBDEFFILE;
 
 pub fn validate_lualib_path(library_root_path : &PathBuf) -> bool {
   //! checks to see if the supplied path has a library inside of it.
@@ -11,10 +13,10 @@ pub fn validate_lualib_path(library_root_path : &PathBuf) -> bool {
     },
     true => {
       let mut lib_file : PathBuf = library_root_path.clone();
-      lib_file.push(super::LIBDEFFILE);
+      lib_file.push(LIBDEFFILE);
       match lib_file.exists() {
         false => {
-          output_error!("Folder isn't formatted correctly, no {} file found in \'{}\'",Yellow.paint(super::LIBDEFFILE),Red.paint(library_root_path.display().to_string()));
+          output_error!("Folder isn't formatted correctly, no {} file found in \'{}\'",Yellow.paint(LIBDEFFILE),Red.paint(library_root_path.display().to_string()));
           false
         },
         true => { true }

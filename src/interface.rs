@@ -40,7 +40,10 @@ fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
       let mut destination_path = library_path.clone();
       destination_path.push(lpsettings::get_value_or("compile-folder","bin"));
 
-      super::compile(&library_path, &destination_path);
+      match super::compile(&library_path, &destination_path) {
+        Err(error) => { output_error!("Error compiling: {}",error.to_string()); }
+        Ok(path) => { println!("Successfully compiled: {}",Blue.paint(path.display().to_string())); }
+      }
     }
     false => { 
       output_debug!("Path does not exist!"); 

@@ -1,29 +1,26 @@
 extern crate toml;
 extern crate clap;
 extern crate regex;
-extern crate rand; use rand::Rng;
+extern crate rand; 
 extern crate ansi_term; use ansi_term::Colour::{Red,Yellow,Blue,Green};
+#[macro_use]
+extern crate serde_derive;
 
 #[macro_use]
 extern crate output;
-#[macro_use]
-extern crate serde_derive;
 extern crate lpsettings;
 extern crate version;
-
-pub mod interface;
-mod bufferprocessing;
-mod compile;
-mod lualib;
-mod lualibdef;
-mod library;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::io::prelude::*;
+
+pub mod interface;
+mod processing;
+mod library;
+mod local;
 
 pub static LIBDEFFILE : &str = "lib.toml";
 
@@ -31,7 +28,7 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
 
   let mut final_compiled_path : Option<PathBuf> = None;
 
-  match compile::validate_lualib_path(&path) {
+  match processing::compile::validate_lualib_path(&path) {
     false => { 
       output_error!("Path {} is not a valid lua lib: {}", Red.paint(path.display().to_string()),Yellow.paint(format!("{} not found",LIBDEFFILE)));
       return Err("Not a valid library");
@@ -39,7 +36,7 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
     true => { output_debug!("Valid lua library"); }
   }
 
-  match lualib::get_lualib_settings(&path) {
+  match library::luafile::get_lualib_settings(&path) {
     None => { output_error!("Error loading lualib definition file for {}",&path.display().to_string()); }
     Some(definition) => {
 
@@ -74,11 +71,11 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
             }
         
 
-            let preload_text :String = create_random_preload_name(&definition.name);
+            let preload_text :String = processing::gen::create_random_preload_name(&definition.name);
             preload_hash.insert(file.clone(),preload_text.clone());
 
             output_debug!("Loading {} into {}",&src_path.display().to_string(),&preload_text);
-            array_of_preloads.push(lualib::create_preload_string(&src_path,&preload_text));
+            array_of_preloads.push(library::luafile::create_preload_string(&src_path,&preload_text));
 
           }
         }
@@ -101,10 +98,10 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
                 },
                 Ok(compiled_path) => { 
                   // nead to insert the source into a preload
-                  let preload_text :String = create_random_preload_name(&definition.name);
+                  let preload_text :String = processing::gen::create_random_preload_name(&definition.name);
                   preload_hash.insert(reference_name.clone(),preload_text.clone());
 
-                  array_of_preloads.push(lualib::create_preload_string(&compiled_path,&preload_text));
+                  array_of_preloads.push(library::luafile::create_preload_string(&compiled_path,&preload_text));
                 }
               }
             } else {
@@ -124,14 +121,14 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
           let mut file_buffer : String = String::new();
 
           // adding the dependencies and requires source code
-          bufferprocessing::inject_comment_header(&mut file_buffer);
-          bufferprocessing::inject_preloads(&mut file_buffer,&array_of_preloads);  // writes the preloaded stuff          
-          bufferprocessing::inject_basefill(&mut file_buffer,&definition.to_compiled_base_file(&preload_hash));  // writes the basefill stuff
+          processing::buffer::inject_comment_header(&mut file_buffer);
+          processing::buffer::inject_preloads(&mut file_buffer,&array_of_preloads);  // writes the preloaded stuff          
+          processing::buffer::inject_basefill(&mut file_buffer,&definition.to_compiled_base_file(&preload_hash));  // writes the basefill stuff
 
           // processess the resulting buffer
-          bufferprocessing::remove_comments(&mut file_buffer);
-          bufferprocessing::remove_blank_lines(&mut file_buffer);
-          bufferprocessing::process_depends_references(&mut file_buffer,&preload_hash); // takes all the @ references and replaces them.
+          processing::buffer::remove_comments(&mut file_buffer);
+          processing::buffer::remove_blank_lines(&mut file_buffer);
+          processing::buffer::process_depends_references(&mut file_buffer,&preload_hash); // takes all the @ references and replaces them.
 
           // writes teh buffer to the file
           match file.write_all(&file_buffer.as_bytes()) {
@@ -145,7 +142,7 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
           } else { 
             Red.paint("Failed") 
           };
-          println!("Compiling {}/{} ({}): {}",Blue.paint(definition.user.clone()),Blue.paint(definition.name.clone()),Yellow.paint(definition.version.to_string().clone()),result_text);
+          output_debug!("Compiling {}/{} ({}): {}",Blue.paint(definition.user.clone()),Blue.paint(definition.name.clone()),Yellow.paint(definition.version.to_string().clone()),result_text);
         } 
       }
       
@@ -157,21 +154,10 @@ pub fn compile(path : &PathBuf, dest : &PathBuf) -> Result<PathBuf,&'static str>
   Err("General compilation error.")
 }
 
-fn create_random_preload_name(library_name:&str) -> String {
-  let mut additative : String = "".to_string();
-
-  for _ in 0..24 {
-    let c = rand::thread_rng().gen_range(0,9);
-    additative = format!("{}{}",additative,c);
-  }
-
-  format!("{}-{}",&library_name,&additative)
-}
-
 fn get_library_path(library_name:&str) -> Option<PathBuf> {
   if let Some(value) = lpsettings::get_value("library.local-folder") { 
     // first it checks locally.
-    let libraries : HashMap<String,PathBuf> = library::get_local_libraries(&PathBuf::from(&value));
+    let libraries : HashMap<String,PathBuf> = local::library::get_local_libraries(&PathBuf::from(&value));
     if let Some(path) = libraries.get(library_name) { return Some(path.clone()); } else { return None; }
   } else {
       output_error!("No local library path set, please set value {} in order to use.",Red.paint("library.local-folder"));

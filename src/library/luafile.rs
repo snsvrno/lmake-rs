@@ -1,23 +1,24 @@
+use ansi_term::Colour::{Yellow,Red};
+use toml;
+
 use std::path::PathBuf;
 use std::fs;
 use std::io::prelude::*;
 
-use lualibdef::LibraryDefinition;
-
-use ansi_term::Colour::{Yellow,Red};
-use toml;
+use LIBDEFFILE;
+use library::lualibdef::LibraryDefinition;
 
 pub fn get_lualib_settings(library_root_path : &PathBuf) -> Option<LibraryDefinition> {
   //! loads the lib.toml file into a LibraryDefinition and returns that
 
   let mut path_lib_def_file = library_root_path.clone();
-  path_lib_def_file.push(super::LIBDEFFILE);
+  path_lib_def_file.push(LIBDEFFILE);
 
   let raw_lib_def_contents = get_raw_file_contents(&path_lib_def_file);
   let definition : Result<LibraryDefinition,toml::de::Error> = toml::from_str(&raw_lib_def_contents);
 
   match definition {
-    Err(error) => { output_debug!("Error parsing the library definition file \'{}\': {}",Yellow.paint(super::LIBDEFFILE),Red.paint(error.to_string())); return None; }
+    Err(error) => { output_debug!("Error parsing the library definition file \'{}\': {}",Yellow.paint(LIBDEFFILE),Red.paint(error.to_string())); return None; }
     Ok(def) => {
       output_debug!("Loaded the library {}",def.to_string());
       return Some(def);
