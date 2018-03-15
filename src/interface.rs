@@ -33,6 +33,8 @@ fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
   if matches.is_present("name-with-version") { env::set_var("LMAKE_COMPILE_WITH_VERSION_IN_NAME","true"); }
   if matches.is_present("remove-comments") { env::set_var("LMAKE_REMOVE_COMMENTS","true"); }
 
+  if let Some(new_name) = matches.value_of("compiled-name") { env::set_var("LMAKE_COMPILE_NAME",new_name); }
+
   let library_path : PathBuf = if let Some(lib) = matches.value_of("PATH") { PathBuf::from(lib) } else { PathBuf::from(".") };
   output_debug!("using {} as the library path",Blue.paint(library_path.display().to_string()));
   match library_path.exists() {
@@ -40,7 +42,7 @@ fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
       let mut destination_path = library_path.clone();
       destination_path.push(lpsettings::get_value_or("compile-folder","bin"));
 
-      match super::compile(&library_path, &destination_path) {
+      match super::compile(&library_path, &destination_path, false) {
         Err(error) => { output_error!("Error compiling: {}",error.to_string()); }
         Ok(path) => { println!("Successfully compiled: {}",Blue.paint(path.display().to_string())); }
       }
@@ -125,7 +127,8 @@ pub fn app() -> clap::App<'static,'static> {
       .arg(clap::Arg::with_name("compiled-name")
         .help("Set what to name the compiled file")
         .long("compiled-name")
-        .short("c"))
+        .short("c")
+        .takes_value(true))
       
     )
 
