@@ -4,7 +4,7 @@ use std::io::prelude::*;
 
 use lualibdef::LibraryDefinition;
 
-use ansi_term::Colour::{Yellow,Red,Green,Blue};
+use ansi_term::Colour::{Yellow,Red};
 use toml;
 
 pub fn get_lualib_settings(library_root_path : &PathBuf) -> Option<LibraryDefinition> {
@@ -28,7 +28,7 @@ pub fn get_lualib_settings(library_root_path : &PathBuf) -> Option<LibraryDefini
 pub fn create_preload_string(path : &PathBuf,prename : &str) -> String {
   let contents = get_raw_file_contents(&path);
 
-  format!("package.preload['{}'] = (function(...)\n\
+  format!("\npackage.preload['{}'] = (function(...)\n\
     {}\n\
     end)\n\
     ",prename,contents)

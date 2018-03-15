@@ -11,6 +11,7 @@ pub struct LibraryDefinition {
 
   pub upstream : Option<String>,
   pub requires : Option<HashMap<String,String>>,
+  pub dependencies : Option<HashMap<String,HashMap<String,String>>>,
 
 }
 
@@ -46,9 +47,9 @@ impl LibraryDefinition {
       }
     }
     if let Some(base) = library_inital {
-      format!("{}\n{}\nreturn library",base,info)
+      format!("{}\n{}\nreturn library\n",base,info)
     } else {
-      format!("local library = {{}}\n{}\nreturn library", info)
+      format!("local library = {{}}\n{}\nreturn library\n", info)
     }
   }
 
