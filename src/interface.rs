@@ -30,8 +30,8 @@ pub fn process(matches : &clap::ArgMatches) -> Result<(),&'static str> {
 fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
 
 
-  if matches.is_present("name-with-version") { env::set_var("LMAKE_COMPILE_WITH_VERSION_IN_NAME","true"); }
-  if matches.is_present("remove-comments") { env::set_var("LMAKE_REMOVE_COMMENTS","true"); }
+  if matches.is_present("name-with-version") || lpsettings::get_value_or("lmake.name-with-version","false") == "true" { env::set_var("LMAKE_COMPILE_WITH_VERSION_IN_NAME","true"); }
+  if matches.is_present("remove-comments") || lpsettings::get_value_or("lmake.remove-comments","false") == "true" { env::set_var("LMAKE_REMOVE_COMMENTS","true"); } 
 
   if let Some(new_name) = matches.value_of("compiled-name") { env::set_var("LMAKE_COMPILE_NAME",new_name); }
 
@@ -120,8 +120,6 @@ pub fn app() -> clap::App<'static,'static> {
       .arg(clap::Arg::with_name("remove-comments")
         .help("Removes all comments from files")
         .long("remove-comments"))
-
-
 
       // parameters
       .arg(clap::Arg::with_name("compiled-name")
