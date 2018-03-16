@@ -2,6 +2,7 @@ extern crate toml;
 extern crate clap;
 extern crate regex;
 extern crate rand; 
+extern crate git2;
 extern crate ansi_term; use ansi_term::Colour::{Red,Yellow,Blue,Green};
 #[macro_use]
 extern crate serde_derive;
