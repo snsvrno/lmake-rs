@@ -66,9 +66,19 @@ pub fn dependencies(dest : &PathBuf, definition : &LibraryDefinition,array_of_pr
 
     for(name,blob) in hash.iter() {
       let library_name : String = if let Some(lname) = blob.get("name") { lname.clone() } else { name.clone() };
+
+      // gets the required version / with error checking on MAX!
+      let required_version : Version = if let Some(ver) = blob.get("version") { 
+        if let Some(version) = Version::from_str(ver) { version } 
+        else { 
+          output_error!("Malformed version requirement in dependency for {}: {}, using \"{}\" instead.",Blue.paint(library_name.to_string()),Red.paint(ver.to_string()),Yellow.paint("*"));
+          Version::from_str("*").unwrap()
+        }
+      } else { Version::from_str("*").unwrap() };
+
       let reference_name : String = name.clone();
 
-      if let Some(dependancy_path) = get_library_path(&library_name,&definition.version) {
+      if let Some(dependancy_path) = get_library_path(&library_name,&required_version) {
         output_debug!("Found library at {}",Blue.paint(dependancy_path.display().to_string()));
 
         match super::super::compile(&dependancy_path,&dest,true) {
@@ -118,7 +128,7 @@ fn get_library_path(library_name:&str, version:&Version) -> Option<PathBuf> {
   }
 
   // checks remotely ....
-  output_debug!("Remove not implemented.");
+  output_debug!("remote libraries not yet implemented.");
 
   // finds the path
   if let Some((matching_version,path)) = best_local_version {
@@ -126,7 +136,7 @@ fn get_library_path(library_name:&str, version:&Version) -> Option<PathBuf> {
     let mut cloned_path = if let Ok(path) = lpsettings::get_settings_folder() { path } else { PathBuf::from(".") };
 
     cloned_path.push(lpsettings::get_value_or("core.cache","cache"));
-    cloned_path.push(format!("{}-{}",&library_name,&version.to_string()));
+    cloned_path.push(format!("{}-{}",&library_name,&matching_version.to_string()));
     if cloned_path.exists() { 
       output_debug!("{} already exists, using existing.",Blue.paint(cloned_path.display().to_string()));
       return Some(cloned_path); 
