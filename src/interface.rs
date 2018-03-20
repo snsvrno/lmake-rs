@@ -22,9 +22,49 @@ pub fn process(matches : &clap::ArgMatches) -> Result<(),&'static str> {
 
   match matches.subcommand() {
     ("compile", Some(sub_m)) => { return process_compile(&sub_m); }
+    ("install", Some(sub_m)) => { return process_install(&sub_m); }
     _ => { output_error!("Not matches found"); return Err("error"); }
   }
   
+}
+
+fn process_install(matches : &clap::ArgMatches) -> Result<(),&'static str> {
+
+  match matches.subcommand() {
+    ("add", Some(sub_m)) => { process_install_add(&sub_m); }
+    _ => { process_install_none(&matches); }
+  }
+
+  Ok ( () )
+}
+
+fn process_install_none(matches : &clap::ArgMatches) -> Result<(),&'static str> {
+  if let Some(path) = matches.value_of("PATH") {
+    println!("{}",path);
+  }
+  Ok ( () )
+}
+
+fn process_install_add(matches : &clap::ArgMatches) -> Result<(),&'static str> {
+  if let Some(libraries) = matches.values_of("LIBRARY") {
+    for lib in libraries {
+      
+      let mut vec : Vec<&str> = lib.split("$").collect();
+      let var : Option<String> = if vec.len() > 1 { Some(vec[1].to_string()) } else { None };
+
+      let mut vec_2 : Vec<&str>  = vec[0].split(":").collect();
+      let version : Option<String> = if vec_2.len() > 1 { Some(vec_2[1].to_string()) } else { Some("latest".to_string()) };
+      let name : String = vec_2[0].to_string();
+
+      if var.is_some() {
+        lpsettings::set_value_local(&format!("project.libraries.{}.version",&name),&version.unwrap());
+        lpsettings::set_value_local(&format!("project.libraries.{}.var",&name),&var.unwrap());
+      } else {
+        lpsettings::set_value_local(&format!("project.libraries.{}",&name),&version.unwrap());
+      }
+    }
+  }
+  Ok ( () )
 }
 
 fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
@@ -101,18 +141,43 @@ pub fn app() -> clap::App<'static,'static> {
 
   // parameters
 
-  // subapps
+  // INSTALL subapp
+    .subcommand(clap::SubCommand::with_name("install")
+      .about("Compiles and Installs libraries based on a definition file.")
+
+    // add subcommand
+      .subcommand(clap::SubCommand::with_name("add")
+        .about("Adds librares to a definition file.")
+        .arg(clap::Arg::with_name("path")
+          .help("Path to definition file")
+          .short("p")
+          .long("path"))
+        .arg(clap::Arg::with_name("LIBRARY")
+          .help("Library === name:version$var.")
+          .value_name("LIBRARY")
+          .required(true)
+          .multiple(true))
+        )
+
+    // arguements
+      .arg(clap::Arg::with_name("PATH")
+        .help("Path to definition file")
+        .value_name("PATH")
+        .index(1))
+      )
+
+
+  // COMPILE subapp
     .subcommand(clap::SubCommand::with_name("compile")
       .about("Compiles the library.")
 
-      // arguements
+    // arguements
       .arg(clap::Arg::with_name("PATH")
         .help("Path to library to compile")
         .value_name("PATH")
-        .required(true)
-        .index(1))
+        .required(true))
 
-      // switches
+    // switches
       .arg(clap::Arg::with_name("name-with-version")
         .help("Include the version in the compiled name")
         .long("name-with-version"))
@@ -121,7 +186,7 @@ pub fn app() -> clap::App<'static,'static> {
         .help("Removes all comments from files")
         .long("remove-comments"))
 
-      // parameters
+    // parameters
       .arg(clap::Arg::with_name("compiled-name")
         .help("Set what to name the compiled file")
         .long("compiled-name")

@@ -1,6 +1,6 @@
 [package]
 name = "lmake"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["snsvrno <snsvrno@tuta.io>"]
 
 [dependencies]
@@ -14,5 +14,5 @@ regex = "0.2.6"
 git2 = "0.6.11"
 
 output = { git = "https://github.com/Snsvrno/output-lp-rs", tag = "0.1.0" }
-lpsettings = { git = "https://github.com/Snsvrno/lpsettings-rs", tag = "0.1.4" }
+lpsettings = { git = "https://github.com/Snsvrno/lpsettings-rs", tag = "0.1.6" }
 version = { git = "https://github.com/Snsvrno/version-lp-rs", tag = "0.1.4" }
