@@ -14,6 +14,6 @@ regex = "0.2.6"
 git2 = "0.6.11"
 
 output = { git = "https://github.com/Snsvrno/output-lp-rs", tag = "0.1.0" }
-# lpsettings = { git = "https://github.com/Snsvrno/lpsettings-rs", tag = "0.1.6" }
-lpsettings = { path = "../lpsettings" }
+lpsettings = { git = "https://github.com/Snsvrno/lpsettings-rs", tag = "0.1.7" }
+#lpsettings = { path = "../lpsettings" }
 version = { git = "https://github.com/Snsvrno/version-lp-rs", tag = "0.1.4" }
