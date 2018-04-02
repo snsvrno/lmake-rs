@@ -99,7 +99,7 @@ pub fn dependencies(dest : &PathBuf, definition : &LibraryDefinition,array_of_pr
   }
 }
 
-fn get_library_path(library_name:&str, version:&Version) -> Option<PathBuf> {
+pub fn get_library_path(library_name:&str, version:&Version) -> Option<PathBuf> {
   //! looks for the correct path to the library requested.
   //!
   //! First it will look in the local area, check for git tags, and then mark the best matching tag.

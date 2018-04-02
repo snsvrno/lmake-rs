@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use std::env;
 
 use lpsettings;
+use local;
 
 pub fn process(matches : &clap::ArgMatches) -> Result<(),&'static str> {
   //! process function to be used with [CLAP.RS](https://clap.rs/)'s `.get_matches()`.
@@ -40,7 +41,12 @@ fn process_install(matches : &clap::ArgMatches) -> Result<(),&'static str> {
 
 fn process_install_none(matches : &clap::ArgMatches) -> Result<(),&'static str> {
   if let Some(path) = matches.value_of("PATH") {
-    println!("{}",path);
+    // building the right path where to install the libraries
+    let mut path : PathBuf = PathBuf::from(path);
+    path.push(lpsettings::get_value_or("project.library-compile-path","lib"));
+
+    local::install::from_toml(&path);
+
   }
   Ok ( () )
 }
@@ -80,7 +86,7 @@ fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
   match library_path.exists() {
     true => { output_debug!("Path exists.");
       let mut destination_path = library_path.clone();
-      destination_path.push(lpsettings::get_value_or("compile-folder","bin"));
+      destination_path.push(lpsettings::get_value_or("lmake.compile-path","bin"));
 
       match super::compile(&library_path, &destination_path, false) {
         Err(error) => { output_error!("Error compiling: {}",error.to_string()); }
