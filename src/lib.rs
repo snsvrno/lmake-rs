@@ -72,7 +72,8 @@ pub fn compile(path : &PathBuf, dest : &PathBuf, dep : bool) -> Result<PathBuf,&
       // processess the resulting buffer, formatting, var names, etc..
       processing::buffer::remove_comments(&mut file_buffer);
       processing::buffer::remove_blank_lines(&mut file_buffer);
-      processing::buffer::process_depends_references(&mut file_buffer,&preload_hash); // takes all the @ references and replaces them.
+      processing::buffer::process_depends_references(&mut file_buffer,&preload_hash); // takes all the @ references and replaces them if dependencies.
+      processing::buffer::process_internal_references(&mut file_buffer,&definition.requires,&preload_hash); // takes all the @ references and replaces them if internal references.
 
       // creates the compiled output file.
       match fs::File::create(&compiled_file_path) {

@@ -57,20 +57,67 @@ pub fn process_depends_references(buffer : &mut String,preload_hash : &HashMap<S
 
   let mut used_vars : Vec<String> = Vec::new();
 
-  let re = regex::Regex::new(r" @([^.]*)").unwrap();
+  let re = regex::Regex::new(r"@([^.]*)").unwrap();
   
   // figures out the var names for all of these.
   for mtch in re.find_iter(&buffer) {
-    used_vars.push(mtch.as_str()[2..].to_string());
+    used_vars.push(mtch.as_str()[1..].to_string());
   }
 
   for var in used_vars {
     if let Some(value) = preload_hash.get(&var) {
       *buffer = buffer.replace(
-        &format!(" @{}",&var),
+        &format!("@{}",&var),
         &format!(" require(\"{}\")",&value)
       );
     }
   }
+
+}
+
+pub fn process_internal_references(buffer : &mut String, requires : &Option<HashMap<String,String>>, preload_hash : &HashMap<String,String>) {
+  //! replaces @references that are refering to an internal file. These are files in the source tree under 'requires' so if a toml looks like
+  //!
+  //! ```toml
+  //! [requires]
+  //! "defaults.place.two" = "src.functions"
+  //! ```
+  //! and `src.functions` has some functions, this part will replace `@defaults.place.two` with the preload for `src.functions`. If you reference
+  //! `@defaults.place.two:megaFunction()` or `@defaults.place.two.otherVar` it will replace to `[PRELOAD]:megaFunction()` and `[PRELOAD].otherVar`
+
+  let mut used_vars : Vec<String> = Vec::new();
+
+  let re = regex::Regex::new(r"@([A-Za-z0-9._]*)").unwrap();
+  
+  // figures out the var names for all of these.
+  for mtch in re.find_iter(&buffer) {
+    used_vars.push(mtch.as_str()[1..].to_string());
+  }
+
+  if let Some(ref requires) = *requires {
+
+    for var in used_vars {
+      let mut keep_on_going : bool = true;
+      let mut seperated_path : Vec<&str> = var.split(".").collect();
+
+      // goes through the path backwards and checks if they are valid. can't tell the difference because @ref.ref.func and @ref.ref.ref so goes though all of them. 
+      while keep_on_going {
+        if let Some(file_path) = requires.get(&seperated_path.join(".")) {
+          if let Some(preload_path) = preload_hash.get(file_path) {
+            output_debug!("replacing internal reference {} to {}",seperated_path.join("."),preload_path);
+            *buffer = buffer.replace(
+              &format!("@{}",&seperated_path.join(".")),
+              &format!("require(\"{}\")",&preload_path)
+            );
+            keep_on_going = false;
+          } 
+          
+        } else { seperated_path.pop(); }
+        if seperated_path.len() <= 0 { keep_on_going = false; }
+      }
+    }
+    
+  }
+
 
 }
