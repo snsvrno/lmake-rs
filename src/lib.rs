@@ -11,6 +11,7 @@ extern crate serde_derive;
 extern crate output;
 extern crate lpsettings;
 extern crate version;
+extern crate base64;
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -74,6 +75,9 @@ pub fn compile(path : &PathBuf, dest : &PathBuf, dep : bool) -> Result<PathBuf,&
       processing::buffer::remove_blank_lines(&mut file_buffer);
       processing::buffer::process_depends_references(&mut file_buffer,&preload_hash); // takes all the @ references and replaces them if dependencies.
       processing::buffer::process_internal_references(&mut file_buffer,&definition.requires,&preload_hash); // takes all the @ references and replaces them if internal references.
+
+      // does optional stuff, like asset replacement
+      processing::buffer::embed_assets(&mut file_buffer,&definition.options);
 
       // creates the compiled output file.
       match fs::File::create(&compiled_file_path) {

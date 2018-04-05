@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use version::version::Version;
+use library::multivalue::Multivalue;
 
 #[derive(Deserialize)]
 pub struct LibraryDefinition {
@@ -8,10 +9,12 @@ pub struct LibraryDefinition {
   pub author : String,
   pub email : Option<String>,
   pub version : Version,
+  pub love : Option<Version>,
 
   pub upstream : Option<String>,
   pub requires : Option<HashMap<String,String>>,
   pub dependencies : Option<HashMap<String,HashMap<String,String>>>,
+  pub options : Option<HashMap<String,Multivalue>>
 
 }
 

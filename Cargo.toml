@@ -12,6 +12,7 @@ serde_derive = "1.0.27"
 rand = "0.4"
 regex = "0.2.6"
 git2 = "0.6.11"
+base64 = "0.9.0"
 
 output = { git = "https://github.com/Snsvrno/output-lp-rs", tag = "0.1.0" }
 lpsettings = { git = "https://github.com/Snsvrno/lpsettings-rs", tag = "0.1.7" }

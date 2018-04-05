@@ -1,7 +1,14 @@
-use regex;
-
+use std::path::PathBuf;
 use std::env;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::prelude::*;
+
+use library::multivalue::Multivalue;
+
+use ansi_term::Colour::{Red,Yellow,Green,Blue};
+use regex;
+use base64;
 
 pub fn inject_comment_header(buffer : &mut String) {
   *buffer = format!("{}\n\
@@ -120,4 +127,78 @@ pub fn process_internal_references(buffer : &mut String, requires : &Option<Hash
   }
 
 
+}
+
+pub fn embed_assets(buffer : &mut String, options : &Option<HashMap<String,Multivalue>>) {
+  if let Some(ref options) = *options {
+    if let Some(values) = options.get("embed") {
+        
+      match *values {
+        Multivalue::Switch(_) => { }
+        Multivalue::Array(ref extensions) => { }
+        Multivalue::Text(ref extension) => { 
+
+          if let Ok(re) = regex::Regex::new(&format!("['|\"]([^\n]*)\\.{}[\"|']",extension)){
+            output_debug!("*.{} embedding activated.",Green.paint(extension.to_string()));
+          
+            let mut matches : Vec<(String,String)> = Vec::new();  
+            for mtch in re.find_iter(&buffer) {
+              // removes the first and last characters, the quotations
+              matches.push((
+                  mtch.as_str().to_string(),
+                  mtch.as_str()[1..mtch.as_str().len()-1].to_string()
+              ));
+            }
+
+            for mtch in matches {
+              if let Some(encoded) = validate_asset(&mtch.1) {
+                *buffer = buffer.replace(
+                  &mtch.0,
+                  &get_asset_helper(&extension,&mtch.1,&encoded)
+                );
+              }
+            }
+          } else { output_error!("Error building regex for embedding, check toml's options.embed"); }
+
+        }
+      }
+      
+
+    }
+  }
+}
+
+fn get_asset_helper(extension : &str, path : &str, converted_asset : &str) -> String {
+  match extension {
+    "png" => { format!("love.filesystem.newFileData(\'{}\',\'{}\','base64')",&converted_asset,&path) }
+    _ => { 
+      output_error!("No special asset helpers defined for {}", extension);
+      converted_asset.to_string() 
+    }
+  }
+}
+
+fn validate_asset(path : &str) -> Option<String> {
+
+  if let Ok(mut potential_asset) = env::current_dir() {
+    potential_asset.push(&path);
+
+    let mut file_contents : Vec<u8>= Vec::new();
+    if potential_asset.exists() {
+      match File::open(&potential_asset) {
+        Err(error) => { output_error!("Cannot open file {}: {}",Red.paint(potential_asset.display().to_string()),Yellow.paint(error.to_string())); },
+        Ok(mut file) => { 
+          match file.read_to_end(&mut file_contents){
+            Err(error) => { output_error!("Saving of file \'{}\' contents to buffer failed: {}",Red.paint(potential_asset.display().to_string()),Yellow.paint(error.to_string())); }
+            Ok(_) => { 
+              output_debug!("Embedding {} using base64.",&path);
+              return Some(base64::encode(&file_contents));
+            }
+          }
+        }
+      }
+    }
+  }
+
+  None
 }
