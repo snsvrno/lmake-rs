@@ -88,7 +88,7 @@ fn process_compile(matches : &clap::ArgMatches) -> Result<(),&'static str> {
       let mut destination_path = library_path.clone();
       destination_path.push(lpsettings::get_value_or("lmake.compile-path","bin"));
 
-      match super::compile(&library_path, &destination_path, false) {
+      match super::compile(&library_path, &destination_path, false, &None) {
         Err(error) => { output_error!("Error compiling: {}",error.to_string()); }
         Ok(path) => { println!("Successfully compiled: {}",Blue.paint(path.display().to_string())); }
       }

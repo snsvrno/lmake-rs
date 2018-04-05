@@ -81,7 +81,7 @@ pub fn dependencies(dest : &PathBuf, definition : &LibraryDefinition,array_of_pr
       if let Some(dependancy_path) = get_library_path(&library_name,&required_version) {
         output_debug!("Found library at {}",Blue.paint(dependancy_path.display().to_string()));
 
-        match super::super::compile(&dependancy_path,&dest,true) {
+        match super::super::compile(&dependancy_path,&dest,true,&None) {
           Err(error) => {
             output_error!("Error compiling dependancy {}: {}",Blue.paint(library_name.clone()),Yellow.paint(error.to_string()));
           },
@@ -97,6 +97,26 @@ pub fn dependencies(dest : &PathBuf, definition : &LibraryDefinition,array_of_pr
     }
 
   }
+}
+
+pub fn get_library_latest_version(library_name:&str, version:&Version) -> Option<Version> {
+  // checks locally.
+  if let Some(value) = lpsettings::get_value("library.local-folder") { 
+    let libraries : HashMap<String,PathBuf> = local::library::get_local_libraries(&PathBuf::from(&value));
+    // it we find the library locally
+    if let Some(path) = libraries.get(library_name) { 
+      // now we need to check if it has the right version inside it.
+      let version_tags = get_tag_names(&path);
+      match version.latest_compatible(&version_tags) {
+        None => { output_error!("No version found matching {} requirements.",Red.paint(version.to_string()));}
+        Some(matching_version) => { 
+          output_debug!("Found {} locally.",Yellow.paint(matching_version.clone()));
+          return Version::from_str(matching_version);
+        }
+      }
+    }
+  }
+  None
 }
 
 pub fn get_library_path(library_name:&str, version:&Version) -> Option<PathBuf> {

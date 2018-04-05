@@ -9,8 +9,9 @@ extern crate serde_derive;
 
 #[macro_use]
 extern crate output;
+extern crate love;
 extern crate lpsettings;
-extern crate version;
+extern crate version; use version::version::Version;
 extern crate base64;
 
 use std::collections::HashMap;
@@ -25,7 +26,7 @@ mod local;
 
 pub static LIBDEFFILE : &str = "lib.toml";
 
-pub fn compile(path : &PathBuf, dest : &PathBuf, dep : bool) -> Result<PathBuf,&'static str> {
+pub fn compile(path : &PathBuf, dest : &PathBuf, dep : bool, version : &Option<Version>) -> Result<PathBuf,&'static str> {
 
   let mut final_compiled_path : Option<PathBuf> = None;
 
@@ -40,6 +41,16 @@ pub fn compile(path : &PathBuf, dest : &PathBuf, dep : bool) -> Result<PathBuf,&
   match library::luafile::get_lualib_settings(&path) {
     None => { output_error!("Error loading lualib definition file for {}",&path.display().to_string()); }
     Some(definition) => {
+
+      // first will check if the library is compatible with the version of love being used.
+      // Right now it only makes a warning
+      if let Some(ref version) = *version {
+        if let Some(ref req_ver) = definition.love {
+          if !version.is_compatible_with(req_ver) {
+            output_warning!("{} has a LOVE requirement of {} and is not listed as compatible with LOVE {}",definition.name,req_ver,version.to_string());
+          }
+        }
+      }
 
       // builds the output path, can either do
       // (1) the library name
