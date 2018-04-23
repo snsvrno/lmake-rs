@@ -129,7 +129,7 @@ pub fn process_internal_references(buffer : &mut String, requires : &Option<Hash
 
 }
 
-pub fn embed_assets(buffer : &mut String, options : &Option<HashMap<String,Multivalue>>) {
+pub fn embed_assets(buffer : &mut String, path : &PathBuf, options : &Option<HashMap<String,Multivalue>>) {
   if let Some(ref options) = *options {
     if let Some(values) = options.get("embed") {
         
@@ -151,7 +151,10 @@ pub fn embed_assets(buffer : &mut String, options : &Option<HashMap<String,Multi
             }
 
             for mtch in matches {
-              if let Some(encoded) = validate_asset(&mtch.1) {
+              let mut new_path = path.clone();
+              new_path.push(&mtch.1);
+
+              if let Some(encoded) = validate_asset(&new_path) {
                 *buffer = buffer.replace(
                   &mtch.0,
                   &get_asset_helper(&extension,&mtch.1,&encoded)
@@ -178,22 +181,18 @@ fn get_asset_helper(extension : &str, path : &str, converted_asset : &str) -> St
   }
 }
 
-fn validate_asset(path : &str) -> Option<String> {
+fn validate_asset(path : &PathBuf) -> Option<String> {
 
-  if let Ok(mut potential_asset) = env::current_dir() {
-    potential_asset.push(&path);
-
-    let mut file_contents : Vec<u8>= Vec::new();
-    if potential_asset.exists() {
-      match File::open(&potential_asset) {
-        Err(error) => { output_error!("Cannot open file {}: {}",Red.paint(potential_asset.display().to_string()),Yellow.paint(error.to_string())); },
-        Ok(mut file) => { 
-          match file.read_to_end(&mut file_contents){
-            Err(error) => { output_error!("Saving of file \'{}\' contents to buffer failed: {}",Red.paint(potential_asset.display().to_string()),Yellow.paint(error.to_string())); }
-            Ok(_) => { 
-              output_debug!("Embedding {} using base64.",&path);
-              return Some(base64::encode(&file_contents));
-            }
+  let mut file_contents : Vec<u8>= Vec::new();
+  if path.exists() {
+    match File::open(&path) {
+      Err(error) => { output_error!("Cannot open file {}: {}",Red.paint(path.display().to_string()),Yellow.paint(error.to_string())); },
+      Ok(mut file) => { 
+        match file.read_to_end(&mut file_contents){
+          Err(error) => { output_error!("Saving of file \'{}\' contents to buffer failed: {}",Red.paint(path.display().to_string()),Yellow.paint(error.to_string())); }
+          Ok(_) => { 
+            output_debug!("Embedding {} using base64.",&path.display().to_string());
+            return Some(base64::encode(&file_contents));
           }
         }
       }

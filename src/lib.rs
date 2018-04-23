@@ -88,7 +88,7 @@ pub fn compile(path : &PathBuf, dest : &PathBuf, dep : bool, version : &Option<V
       processing::buffer::process_internal_references(&mut file_buffer,&definition.requires,&preload_hash); // takes all the @ references and replaces them if internal references.
 
       // does optional stuff, like asset replacement
-      processing::buffer::embed_assets(&mut file_buffer,&definition.options);
+      processing::buffer::embed_assets(&mut file_buffer,&path,&definition.options);
 
       // creates the compiled output file.
       match fs::File::create(&compiled_file_path) {
