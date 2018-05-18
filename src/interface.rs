@@ -43,6 +43,7 @@ fn process_install_none(matches : &clap::ArgMatches) -> Result<(),&'static str> 
   if let Some(path) = matches.value_of("PATH") {
     // building the right path where to install the libraries
     let mut path : PathBuf = PathBuf::from(path);
+    if let Some(game_folder) = lpsettings::get_value("project.game-folder") { path.push(game_folder); }
     path.push(lpsettings::get_value_or("project.library-compile-path","lib"));
 
     local::install::from_toml(&path);
