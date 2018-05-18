@@ -99,6 +99,7 @@ pub fn dependencies(dest : &PathBuf, definition : &LibraryDefinition,array_of_pr
   }
 }
 
+// returns the latest matching version available.
 pub fn get_library_latest_version(library_name:&str, version:&Version) -> Option<Version> {
   // checks locally.
   if let Some(value) = lpsettings::get_value("library.local-folder") { 
@@ -116,6 +117,19 @@ pub fn get_library_latest_version(library_name:&str, version:&Version) -> Option
       }
     }
   }
+  None
+}
+
+pub fn get_library_path_git(library_name:&str) -> Option<PathBuf> {
+  // checks locally.
+  if let Some(value) = lpsettings::get_value("library.local-folder") { 
+    let libraries : HashMap<String,PathBuf> = local::library::get_local_libraries(&PathBuf::from(&value));
+    // it we find the library locally
+    if let Some(path) = libraries.get(library_name) { 
+      return Some(path.clone());
+    }
+  }
+
   None
 }
 
